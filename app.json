@@ -26,12 +26,26 @@
       "edgeToEdgeEnabled": true,
       "splash": {
         "image": "./assets/images/splash.png"
+      },
+      "package": "com.naman_bitcot.MyTVProject",
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION"
+      ],
+      "config": {
+        "googleMaps": {
+          "apiKey": "YOUR_GOOGLE_MAPS_API_KEY_HERE"
+        }
       }
     },
     "ios": {
       "splash": {
         "image": "./assets/images/splash.png"
-      }
+      },
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "This app uses location to show maps and provide location-based features."
+      },
+      "bundleIdentifier": "com.naman-bitcot.MyTVProject"
     },
     "web": {
       "bundler": "metro",

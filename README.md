@@ -1,53 +1,78 @@
-# Expo Router TV demo 👋
+# Smart TV Dashboard
 
-![Apple TV screen shot](https://github.com/douglowder/examples/assets/6577821/a881466f-a7a0-4c66-b1fc-33235c466997)
-![Android TV screen shot](https://github.com/douglowder/examples/assets/6577821/815c8e01-8275-4cc1-bd57-b9c8bce1fb02)
+A React Native TV application built with Expo Router, featuring spatial navigation for seamless D-pad control on smart TV devices.
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+![Smart TV Dashboard](https://github.com/douglowder/examples/assets/6577821/a881466f-a7a0-4c66-b1fc-33235c466997)
 
-This project uses
+## 🚀 Features
 
-- the [React Native TV fork](https://github.com/react-native-tvos/react-native-tvos), which supports both phone (Android and iOS) and TV (Android TV and Apple TV) targets
-- the [React Native TV config plugin](https://github.com/react-native-tvos/config-tv/tree/main/packages/config-tv) to allow Expo prebuild to modify the project's native files for TV builds
+- **Spatial Navigation**: Seamless D-pad navigation between dashboard cards and drawer menu
+- **Smart TV Optimized**: Built for Android TV and Apple TV platforms
+- **Interactive Dashboard**: Navigate through US Map, Weather, News, and Settings
+- **Visual Focus Indicators**: Clear visual feedback for focused elements
+- **Responsive Design**: Adapts to different screen sizes and platforms
+
+## 🛠️ Technologies
+
+- [Expo](https://expo.dev) with [Expo Router](https://docs.expo.dev/router/introduction)
+- [React Native TV](https://github.com/react-native-tvos/react-native-tvos)
+- [React Native TV Config Plugin](https://github.com/react-native-tvos/config-tv)
+- Custom spatial navigation implementation for React Native TV
 
 ## 🚀 How to use
 
-- `cd` into the project
+### Prerequisites
+- Node.js 18+
+- Expo CLI
+- Android Studio (for Android TV development)
 
-- For TV development:
-
-```sh
-yarn
-yarn prebuild:tv # Executes clean Expo prebuild with TV modifications
-yarn ios # Build and run for Apple TV
-yarn android # Build for Android TV
-yarn web # Run the project on web from localhost
-```
-- For mobile development:
+### Development
 
 ```sh
-yarn
-yarn prebuild # Executes Expo prebuild with no TV modifications
-yarn ios # Build and run for iOS
-yarn android # Build for Android mobile
-yarn web # Run the project on web from localhost
+# Install dependencies
+npm install
+
+# Start development server for TV
+EXPO_TV=1 npm run start
+
+# For mobile development (without TV features)
+npm run start
 ```
 
-> **_NOTE:_**
-> Setting the environment variable `EXPO_TV=1` enables the `@react-native-tvos/config-tv` plugin to modify the project for TV.
-> This can also be done by setting the parameter `isTV` to true in the `app.json`.
+### Building for TV Platforms
 
-## Development
+```sh
+# Prebuild for TV
+EXPO_TV=1 npm run prebuild:tv
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+# Build for Android TV
+EXPO_TV=1 npm run android
 
-This project includes a [demo](./components/EventHandlingDemo.tsx) showing how to use React Native TV APIs to highlight controls as the user navigates the screen with the remote control.
+# Build for Apple TV
+EXPO_TV=1 npm run ios
+```
 
-## Deploy
+## 📱 Navigation
 
-Deploy on all platforms with Expo Application Services (EAS).
+Use your TV remote's D-pad to navigate:
 
-- Deploy the website: `npx eas-cli deploy` — [Learn more](https://docs.expo.dev/eas/hosting/get-started/)
+- **Left/Right**: Navigate between dashboard cards and drawer button
+- **Up/Down**: Move between rows of cards
+- **SELECT/ENTER**: Activate focused items
+- **Back**: Close drawer and return to dashboard
+
+## 🎯 Dashboard Features
+
+1. **US Map**: Interactive map with city clusters
+2. **Weather**: Current weather conditions
+3. **News**: Latest news and updates
+4. **Settings**: App preferences and configuration
+
+## 🔧 Development Notes
+
+- Set `EXPO_TV=1` environment variable to enable TV-specific features
+- The app uses custom spatial navigation implementation optimized for React Native TV
+- Components include visual focus indicators for better UX on TV devices
 - Deploy on iOS and Android using: `npx eas-cli build` — [Learn more](https://expo.dev/eas)
 
 ## TV specific file extensions
