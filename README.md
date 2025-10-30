@@ -6,10 +6,10 @@ A React Native TV application built with Expo Router, featuring spatial navigati
 
 ## 🚀 Features
 
-- **Spatial Navigation**: Seamless D-pad navigation between dashboard cards and drawer menu
+- **Spatial Navigation**: Seamless D-pad navigation across dashboard, maps, and control rails
 - **Smart TV Optimized**: Built for Android TV and Apple TV platforms
 - **Interactive Dashboard**: Navigate through US Map, Weather, News, and Settings
-- **Visual Focus Indicators**: Clear visual feedback for focused elements
+- **Weather Map Forecasting**: Live cloud clusters with focus states, details panel, and TV-friendly pan mode
 - **Responsive Design**: Adapts to different screen sizes and platforms
 
 ## 🛠️ Technologies
@@ -64,9 +64,29 @@ Use your TV remote's D-pad to navigate:
 ## 🎯 Dashboard Features
 
 1. **US Map**: Interactive map with city clusters
-2. **Weather**: Current weather conditions
+2. **Weather**: Interactive cloud clusters, detailed forecasts, and TV pan mode
 3. **News**: Latest news and updates
 4. **Settings**: App preferences and configuration
+
+### Weather Map Controls
+
+The Weather tab embeds a Leaflet-powered map rendered inside a WebView with fully TV-compatible controls:
+
+| Control | Action |
+| --- | --- |
+| **Focus Map** | Moves D-pad focus back to the map clusters |
+| **Pan Map Mode** | Toggles a DPAD-driven pan mode; when enabled use the arrow keys to move the map view. Press OK again to exit |
+| **Zoom In / Zoom Out** | Adjust map zoom level (clamped between 2.0 and 9.0) |
+| **Forecast Details** | Opens a rich details panel for the focused cloud cluster (press again to close) |
+| **Fullscreen** | Expands the map to full screen; press again to exit |
+
+While the map is focused:
+
+- **Arrow Keys** cycle between cloud clusters (default mode) or pan the map (pan mode)
+- **OK/Enter** selects a cluster, toggles its detail panel, or toggles pan mode depending on the focused control
+- A badge overlays the focused cluster with its icon, region, and current condition
+
+Each cloud cluster displays animated cloud markers sized by coverage, color-coded to the system, and highlights on focus/selection. Selecting a cluster zooms the map and opens a panel with temperature, humidity, wind, coverage, alerts, and short-term forecasts.
 
 ## 🔧 Development Notes
 
