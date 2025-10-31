@@ -10,6 +10,7 @@ import {
   TVEventControl,
   useTVEventHandler,
 } from 'react-native';
+import type { StyleProp, ViewStyle } from 'react-native';
 import { WebView, WebViewMessageEvent } from 'react-native-webview';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { FullscreenContext } from '@/context/FullscreenContext';
@@ -35,6 +36,8 @@ type WeatherCluster = {
   name: string;
   lat: number;
   lon: number;
+  mapLat?: number;
+  mapLon?: number;
   color: string;
   icon: string;
   temperature: string;
@@ -58,6 +61,8 @@ const WEATHER_CLUSTERS: WeatherCluster[] = [
     name: 'Pacific Northwest',
     lat: 47.6062,
     lon: -122.3321,
+    mapLat: 63.502,
+    mapLon: -151.002,
     color: '#6EA8FF',
     icon: '🌧️',
     temperature: '12°C',
@@ -78,6 +83,8 @@ const WEATHER_CLUSTERS: WeatherCluster[] = [
     name: 'Northern Rockies',
     lat: 46.8797,
     lon: -110.3626,
+    mapLat: 7.132,
+    mapLon: 80.221,
     color: '#A3C9F9',
     icon: '🌥️',
     temperature: '4°C',
@@ -97,6 +104,8 @@ const WEATHER_CLUSTERS: WeatherCluster[] = [
     name: 'Central Plains',
     lat: 38.627,
     lon: -90.1994,
+    mapLat: -33.8688,
+    mapLon: 151.2093,
     color: '#5AC8FA',
     icon: '⛈️',
     temperature: '21°C',
@@ -117,6 +126,8 @@ const WEATHER_CLUSTERS: WeatherCluster[] = [
     name: 'Gulf Coast',
     lat: 29.7604,
     lon: -95.3698,
+    mapLat: -23.5505,
+    mapLon: -46.6333,
     color: '#4DD0E1',
     icon: '🌦️',
     temperature: '26°C',
@@ -136,6 +147,8 @@ const WEATHER_CLUSTERS: WeatherCluster[] = [
     name: 'Northeast Corridor',
     lat: 40.7128,
     lon: -74.006,
+    mapLat: 51.5074,
+    mapLon: -0.1278,
     color: '#9FA8DA',
     icon: '☁️',
     temperature: '14°C',
@@ -153,6 +166,11 @@ const WEATHER_CLUSTERS: WeatherCluster[] = [
   },
 ];
 
+const getClusterPosition = (cluster: WeatherCluster) => ({
+  lat: cluster.mapLat ?? cluster.lat,
+  lon: cluster.mapLon ?? cluster.lon,
+});
+
 type FocusKey =
   | ''
   | 'map-entry'
@@ -161,7 +179,11 @@ type FocusKey =
   | 'zoom-out'
   | 'details-btn'
   | 'fullscreen-btn'
-  | 'exit-fullscreen';
+  | 'exit-fullscreen'
+  | 'dpad-up'
+  | 'dpad-down'
+  | 'dpad-left'
+  | 'dpad-right';
 
 const styles = StyleSheet.create({
   container: {
@@ -242,6 +264,93 @@ const styles = StyleSheet.create({
   inactiveButton: {
     opacity: 0.84,
   },
+  dpadWrapper: {
+    position: 'absolute',
+    bottom: isTV ? 120 : 96,
+    right: CONTROL_PANEL_OFFSET + 24,
+    width: 120,
+    height: 120,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 26,
+  },
+  dpadFullscreenWrapper: {
+    bottom: isTV ? 140 : 112,
+    right: 24,
+  },
+  dpadBase: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+    backgroundColor: 'rgba(16, 22, 40, 0.86)',
+    borderRadius: 24,
+    borderWidth: 2,
+    borderColor: 'rgba(140, 170, 255, 0.25)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.35,
+    shadowRadius: 18,
+    elevation: 18,
+  },
+  dpadButton: {
+    position: 'absolute',
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: 'rgba(42, 56, 92, 0.95)',
+    borderWidth: 1,
+    borderColor: 'rgba(180, 210, 255, 0.32)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.28,
+    shadowRadius: 10,
+    elevation: 10,
+  },
+  dpadFocusedButton: {
+    borderColor: '#FFD700',
+    backgroundColor: 'rgba(255, 215, 0, 0.22)',
+    shadowColor: '#FFD700',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.7,
+    shadowRadius: 14,
+    transform: [{ scale: 1.08 }],
+    elevation: 14,
+  },
+  dpadButtonIcon: {
+    fontSize: 22,
+    color: '#E0ECFF',
+  },
+  dpadUp: {
+    top: 12,
+  },
+  dpadDown: {
+    bottom: 12,
+  },
+  dpadLeft: {
+    left: 12,
+  },
+  dpadRight: {
+    right: 12,
+  },
+  dpadCenter: {
+    position: 'absolute',
+    width: 54,
+    height: 54,
+    borderRadius: 16,
+    backgroundColor: 'rgba(64, 78, 118, 0.95)',
+    borderWidth: 1,
+    borderColor: 'rgba(160, 190, 255, 0.28)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dpadCenterText: {
+    color: '#F8FBFF',
+    fontSize: 11,
+    fontWeight: '600',
+    letterSpacing: 0.6,
+  },
   infoPanel: {
     position: 'absolute',
     bottom: isTV ? 72 : 48,
@@ -257,6 +366,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.45,
     shadowRadius: 24,
     elevation: 22,
+    height: isTV ? '70%' : 220,
+    width: isTV ? '40%' : 'auto',
   },
   infoHeader: {
     flexDirection: 'row',
@@ -411,16 +522,24 @@ export default function WeatherScreen() {
   const zoomOutRef = useRef<TouchableOpacityHandle | null>(null);
   const detailsRef = useRef<TouchableOpacityHandle | null>(null);
   const fullscreenRef = useRef<TouchableOpacityHandle | null>(null);
+  const dpadUpRef = useRef<TouchableOpacityHandle | null>(null);
+  const dpadDownRef = useRef<TouchableOpacityHandle | null>(null);
+  const dpadLeftRef = useRef<TouchableOpacityHandle | null>(null);
+  const dpadRightRef = useRef<TouchableOpacityHandle | null>(null);
 
   const getButtonProps = (
     buttonRef: React.RefObject<TouchableOpacityHandle | null>,
     buttonFocusKey: FocusKey,
+    options: { isEnabled?: boolean } = {},
   ) => {
+    const isEnabled = options.isEnabled ?? true;
+
     if (!isTV) {
       return {
         ref: buttonRef as React.RefObject<TouchableOpacityHandle>,
         onFocus: () => setFocusKey(buttonFocusKey),
         onBlur: () => {},
+        focusable: isEnabled,
       } as const;
     }
 
@@ -442,9 +561,10 @@ export default function WeatherScreen() {
 
     return {
       ref: buttonRef,
-      hasTVPreferredFocus: isFocused,
+      hasTVPreferredFocus: isFocused && isEnabled,
       onFocus: () => setFocusKey(buttonFocusKey),
       onBlur: () => {},
+      focusable: isEnabled,
       focus: requestFocus,
       isFocused,
       getNodeHandle,
@@ -457,7 +577,11 @@ export default function WeatherScreen() {
   const zoomOutButton = getButtonProps(zoomOutRef, 'zoom-out');
   const detailsButton = getButtonProps(detailsRef, 'details-btn');
   const fullscreenButton = getButtonProps(fullscreenRef, isFullscreen ? 'exit-fullscreen' : 'fullscreen-btn');
-  const mapFocus = isTV ? getButtonProps(mapFocusRef, '' as FocusKey) : null;
+  const mapFocus = isTV ? getButtonProps(mapFocusRef, '' as FocusKey, { isEnabled: !isPanMode }) : null;
+  const dpadUpButton = getButtonProps(dpadUpRef, 'dpad-up');
+  const dpadDownButton = getButtonProps(dpadDownRef, 'dpad-down');
+  const dpadLeftButton = getButtonProps(dpadLeftRef, 'dpad-left');
+  const dpadRightButton = getButtonProps(dpadRightRef, 'dpad-right');
 
   const handleWebViewMessage = useCallback((event: WebViewMessageEvent) => {
     try {
@@ -514,6 +638,97 @@ export default function WeatherScreen() {
     }
   }, [zoom]);
 
+  const renderDpad = useCallback(
+    (wrapperStyle?: StyleProp<ViewStyle>) => {
+      const mapFocusHandle = !isPanMode ? mapFocus?.getNodeHandle?.() ?? undefined : undefined;
+      const fullscreenHandle = fullscreenButton.getNodeHandle?.() ?? undefined;
+      return (
+        <View style={[styles.dpadWrapper, wrapperStyle]} pointerEvents="box-none">
+          <View style={styles.dpadBase} />
+          <TouchableOpacity
+            {...dpadUpButton}
+            style={[
+              styles.dpadButton,
+              styles.dpadUp,
+              dpadUpButton.isFocused ? styles.dpadFocusedButton : null,
+            ]}
+            activeOpacity={0.85}
+            nextFocusDown={dpadDownButton.getNodeHandle?.() ?? undefined}
+            nextFocusLeft={dpadLeftButton.getNodeHandle?.() ?? undefined}
+            nextFocusRight={dpadRightButton.getNodeHandle?.() ?? undefined}
+            nextFocusUp={panButton.getNodeHandle?.() ?? undefined}
+            onPress={() => panMap('up')}
+          >
+            <MaterialCommunityIcons name="chevron-up" style={styles.dpadButtonIcon} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            {...dpadDownButton}
+            style={[
+              styles.dpadButton,
+              styles.dpadDown,
+              dpadDownButton.isFocused ? styles.dpadFocusedButton : null,
+            ]}
+            activeOpacity={0.85}
+            nextFocusUp={dpadUpButton.getNodeHandle?.() ?? undefined}
+            nextFocusLeft={dpadLeftButton.getNodeHandle?.() ?? undefined}
+            nextFocusRight={dpadRightButton.getNodeHandle?.() ?? undefined}
+            nextFocusDown={fullscreenHandle}
+            onPress={() => panMap('down')}
+          >
+            <MaterialCommunityIcons name="chevron-down" style={styles.dpadButtonIcon} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            {...dpadLeftButton}
+            style={[
+              styles.dpadButton,
+              styles.dpadLeft,
+              dpadLeftButton.isFocused ? styles.dpadFocusedButton : null,
+            ]}
+            activeOpacity={0.85}
+            nextFocusRight={dpadUpButton.getNodeHandle?.() ?? undefined}
+            nextFocusUp={panButton.getNodeHandle?.() ?? undefined}
+            nextFocusDown={fullscreenHandle}
+            nextFocusLeft={mapFocusHandle}
+            onPress={() => panMap('left')}
+          >
+            <MaterialCommunityIcons name="chevron-left" style={styles.dpadButtonIcon} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            {...dpadRightButton}
+            style={[
+              styles.dpadButton,
+              styles.dpadRight,
+              dpadRightButton.isFocused ? styles.dpadFocusedButton : null,
+            ]}
+            activeOpacity={0.85}
+            nextFocusLeft={dpadUpButton.getNodeHandle?.() ?? undefined}
+            nextFocusUp={panButton.getNodeHandle?.() ?? undefined}
+            nextFocusDown={fullscreenHandle}
+            nextFocusRight={mapEntryButton.getNodeHandle?.() ?? undefined}
+            onPress={() => panMap('right')}
+          >
+            <MaterialCommunityIcons name="chevron-right" style={styles.dpadButtonIcon} />
+          </TouchableOpacity>
+          <View style={styles.dpadCenter}>
+            <Text style={styles.dpadCenterText}>Pan</Text>
+          </View>
+        </View>
+      );
+    },
+    [
+      dpadDownButton,
+      dpadLeftButton,
+      dpadRightButton,
+      dpadUpButton,
+      fullscreenButton,
+      panButton,
+      mapEntryButton,
+      mapFocus,
+      isPanMode,
+      panMap,
+    ],
+  );
+
   useEffect(() => {
     if (!isTV) return;
 
@@ -528,33 +743,18 @@ export default function WeatherScreen() {
   useEffect(() => {
     if (!isTV) return;
 
-    requestAnimationFrame(() => {
-      switch (focusKey) {
-        case '':
-          mapFocus?.focus?.();
-          break;
-        case 'map-entry':
-          mapEntryButton.focus?.();
-          break;
-        case 'pan-btn':
-          panButton.focus?.();
-          break;
-        case 'zoom-in':
-          zoomInButton.focus?.();
-          break;
-        case 'zoom-out':
-          zoomOutButton.focus?.();
-          break;
-        case 'details-btn':
-          detailsButton.focus?.();
-          break;
-        case 'fullscreen-btn':
-        case 'exit-fullscreen':
-          fullscreenButton.focus?.();
-          break;
+    const dpadFocusKeys: FocusKey[] = ['dpad-up', 'dpad-down', 'dpad-left', 'dpad-right'];
+
+    if (isPanMode) {
+      if (!dpadFocusKeys.includes(focusKey)) {
+        setFocusKey('dpad-up');
+        requestAnimationFrame(() => dpadUpButton.focus?.());
       }
-    });
-  }, [focusKey, isFullscreen]);
+    } else if (dpadFocusKeys.includes(focusKey)) {
+      setFocusKey('pan-btn');
+      requestAnimationFrame(() => panButton.focus?.());
+    }
+  }, [focusKey, isPanMode, dpadUpButton, panButton, isTV]);
 
   const handleZoomIn = () => {
     setZoom(prev => {
@@ -574,9 +774,10 @@ export default function WeatherScreen() {
     const current = WEATHER_CLUSTERS[focusedIdx];
     if (!current) return false;
 
+    const currentLat = getClusterPosition(current).lat;
     const candidates = WEATHER_CLUSTERS.map((cluster, index) => ({ cluster, index }))
-      .filter(item => item.cluster.lat > current.lat)
-      .sort((a, b) => a.cluster.lat - b.cluster.lat);
+      .filter(item => getClusterPosition(item.cluster).lat > currentLat)
+      .sort((a, b) => getClusterPosition(a.cluster).lat - getClusterPosition(b.cluster).lat);
 
     if (candidates.length) {
       setFocusedIdx(candidates[0].index);
@@ -590,9 +791,10 @@ export default function WeatherScreen() {
     const current = WEATHER_CLUSTERS[focusedIdx];
     if (!current) return false;
 
+    const currentLat = getClusterPosition(current).lat;
     const candidates = WEATHER_CLUSTERS.map((cluster, index) => ({ cluster, index }))
-      .filter(item => item.cluster.lat < current.lat)
-      .sort((a, b) => b.cluster.lat - a.cluster.lat);
+      .filter(item => getClusterPosition(item.cluster).lat < currentLat)
+      .sort((a, b) => getClusterPosition(b.cluster).lat - getClusterPosition(a.cluster).lat);
 
     if (candidates.length) {
       setFocusedIdx(candidates[0].index);
@@ -606,9 +808,10 @@ export default function WeatherScreen() {
     const current = WEATHER_CLUSTERS[focusedIdx];
     if (!current) return false;
 
+    const currentLon = getClusterPosition(current).lon;
     const candidates = WEATHER_CLUSTERS.map((cluster, index) => ({ cluster, index }))
-      .filter(item => item.cluster.lon < current.lon)
-      .sort((a, b) => b.cluster.lon - a.cluster.lon);
+      .filter(item => getClusterPosition(item.cluster).lon < currentLon)
+      .sort((a, b) => getClusterPosition(b.cluster).lon - getClusterPosition(a.cluster).lon);
 
     if (candidates.length) {
       setFocusedIdx(candidates[0].index);
@@ -622,9 +825,10 @@ export default function WeatherScreen() {
     const current = WEATHER_CLUSTERS[focusedIdx];
     if (!current) return false;
 
+    const currentLon = getClusterPosition(current).lon;
     const candidates = WEATHER_CLUSTERS.map((cluster, index) => ({ cluster, index }))
-      .filter(item => item.cluster.lon > current.lon)
-      .sort((a, b) => a.cluster.lon - b.cluster.lon);
+      .filter(item => getClusterPosition(item.cluster).lon > currentLon)
+      .sort((a, b) => getClusterPosition(a.cluster).lon - getClusterPosition(b.cluster).lon);
 
     if (candidates.length) {
       setFocusedIdx(candidates[0].index);
@@ -648,6 +852,15 @@ export default function WeatherScreen() {
 
   const selectAction = () => {
     const current = WEATHER_CLUSTERS[focusedIdx];
+
+    if (
+      focusKey === 'dpad-up' ||
+      focusKey === 'dpad-down' ||
+      focusKey === 'dpad-left' ||
+      focusKey === 'dpad-right'
+    ) {
+      return;
+    }
 
     if (focusKey === '') {
       if (!current) return;
@@ -674,8 +887,8 @@ export default function WeatherScreen() {
       const nextPanMode = !isPanMode;
       setIsPanMode(nextPanMode);
       if (nextPanMode) {
-        setFocusKey('');
-        requestAnimationFrame(() => mapFocus?.focus?.());
+        setFocusKey('dpad-up');
+        requestAnimationFrame(() => dpadUpButton.focus?.());
       } else {
         requestAnimationFrame(() => panButton.focus?.());
       }
@@ -714,7 +927,7 @@ export default function WeatherScreen() {
 
     if (focusKey === 'exit-fullscreen') {
       setIsFullscreen(false);
-      setFocusKey('map-entry');
+      setFocusKey('');
       setSelectedCluster(null);
       setZoom(DEFAULT_ZOOM);
       return;
@@ -731,38 +944,20 @@ export default function WeatherScreen() {
       return;
     }
 
-    if (isFullscreen) {
-      if (focusKey === 'exit-fullscreen') {
-        setFocusKey('details-btn');
-        detailsButton.focus?.();
-      } else if (focusKey === 'details-btn') {
-        setFocusKey('zoom-out');
-        zoomOutButton.focus?.();
-      } else if (focusKey === 'zoom-out') {
-        setFocusKey('zoom-in');
-        zoomInButton.focus?.();
-      } else if (focusKey === 'zoom-in') {
-        setFocusKey('map-entry');
-        mapEntryButton.focus?.();
+    if (
+      focusKey === 'dpad-up' ||
+      focusKey === 'dpad-down' ||
+      focusKey === 'dpad-left' ||
+      focusKey === 'dpad-right'
+    ) {
+      if (focusKey === 'dpad-up') {
+        setFocusKey('pan-btn');
+        panButton.focus?.();
+      } else {
+        setFocusKey('dpad-up');
+        dpadUpButton.focus?.();
       }
       return;
-    }
-
-    if (focusKey === 'map-entry') {
-      setFocusKey('');
-      requestAnimationFrame(() => mapFocus?.focus?.());
-    } else if (focusKey === 'zoom-in') {
-      setFocusKey('map-entry');
-      mapEntryButton.focus?.();
-    } else if (focusKey === 'zoom-out') {
-      setFocusKey('zoom-in');
-      zoomInButton.focus?.();
-    } else if (focusKey === 'details-btn') {
-      setFocusKey('zoom-out');
-      zoomOutButton.focus?.();
-    } else if (focusKey === 'fullscreen-btn') {
-      setFocusKey('details-btn');
-      detailsButton.focus?.();
     }
   };
 
@@ -776,38 +971,21 @@ export default function WeatherScreen() {
       return;
     }
 
-    if (isFullscreen) {
-      if (focusKey === 'map-entry') {
-        setFocusKey('zoom-in');
-        zoomInButton.focus?.();
-      } else if (focusKey === 'zoom-in') {
-        setFocusKey('zoom-out');
-        zoomOutButton.focus?.();
-      } else if (focusKey === 'zoom-out') {
-        setFocusKey('details-btn');
-        detailsButton.focus?.();
-      } else if (focusKey === 'details-btn') {
-        setFocusKey('exit-fullscreen');
+    if (
+      focusKey === 'dpad-up' ||
+      focusKey === 'dpad-down' ||
+      focusKey === 'dpad-left' ||
+      focusKey === 'dpad-right'
+    ) {
+      if (focusKey === 'dpad-down') {
+        const targetKey = isFullscreen ? 'exit-fullscreen' : 'fullscreen-btn';
+        setFocusKey(targetKey);
         fullscreenButton.focus?.();
+      } else {
+        setFocusKey('dpad-down');
+        dpadDownButton.focus?.();
       }
       return;
-    }
-
-    if (focusKey === 'map-entry') {
-      setFocusKey('zoom-in');
-      zoomInButton.focus?.();
-    } else if (focusKey === 'zoom-in') {
-      setFocusKey('zoom-out');
-      zoomOutButton.focus?.();
-    } else if (focusKey === 'zoom-out') {
-      setFocusKey('details-btn');
-      detailsButton.focus?.();
-    } else if (focusKey === 'details-btn') {
-      setFocusKey('fullscreen-btn');
-      fullscreenButton.focus?.();
-    } else if (focusKey === 'fullscreen-btn') {
-      setFocusKey('');
-      requestAnimationFrame(() => mapFocus?.focus?.());
     }
   };
 
@@ -821,24 +999,26 @@ export default function WeatherScreen() {
       return;
     }
 
-    if (focusKey === 'map-entry') {
-      setFocusKey('');
-      requestAnimationFrame(() => mapFocus?.focus?.());
+    if (
+      focusKey === 'dpad-up' ||
+      focusKey === 'dpad-down' ||
+      focusKey === 'dpad-left' ||
+      focusKey === 'dpad-right'
+    ) {
+      if (focusKey === 'dpad-left') {
+        setFocusKey('');
+        requestAnimationFrame(() => mapFocus?.focus?.());
+      } else if (focusKey === 'dpad-up') {
+        setFocusKey('dpad-left');
+        dpadLeftButton.focus?.();
+      } else if (focusKey === 'dpad-down') {
+        setFocusKey('dpad-left');
+        dpadLeftButton.focus?.();
+      } else if (focusKey === 'dpad-right') {
+        setFocusKey('dpad-up');
+        dpadUpButton.focus?.();
+      }
       return;
-    }
-
-    if (focusKey === 'zoom-in') {
-      setFocusKey('map-entry');
-      mapEntryButton.focus?.();
-    } else if (focusKey === 'zoom-out') {
-      setFocusKey('zoom-in');
-      zoomInButton.focus?.();
-    } else if (focusKey === 'details-btn') {
-      setFocusKey('zoom-out');
-      zoomOutButton.focus?.();
-    } else if (focusKey === 'fullscreen-btn' || focusKey === 'exit-fullscreen') {
-      setFocusKey('details-btn');
-      detailsButton.focus?.();
     }
   };
 
@@ -852,22 +1032,26 @@ export default function WeatherScreen() {
       return;
     }
 
-    if (focusKey === 'map-entry') {
-      setFocusKey('zoom-in');
-      zoomInButton.focus?.();
-    } else if (focusKey === 'zoom-in') {
-      setFocusKey('zoom-out');
-      zoomOutButton.focus?.();
-    } else if (focusKey === 'zoom-out') {
-      setFocusKey('details-btn');
-      detailsButton.focus?.();
-    } else if (focusKey === 'details-btn') {
-      if (isFullscreen) {
-        setFocusKey('exit-fullscreen');
-      } else {
-        setFocusKey('fullscreen-btn');
+    if (
+      focusKey === 'dpad-up' ||
+      focusKey === 'dpad-down' ||
+      focusKey === 'dpad-left' ||
+      focusKey === 'dpad-right'
+    ) {
+      if (focusKey === 'dpad-right') {
+        setFocusKey('map-entry');
+        mapEntryButton.focus?.();
+      } else if (focusKey === 'dpad-up') {
+        setFocusKey('dpad-right');
+        dpadRightButton.focus?.();
+      } else if (focusKey === 'dpad-down') {
+        setFocusKey('dpad-right');
+        dpadRightButton.focus?.();
+      } else if (focusKey === 'dpad-left') {
+        setFocusKey('dpad-up');
+        dpadUpButton.focus?.();
       }
-      fullscreenButton.focus?.();
+      return;
     }
   };
 
@@ -898,12 +1082,13 @@ export default function WeatherScreen() {
   useEffect(() => {
     if (webRef.current && selectedCluster) {
       const targetZoom = Math.max(zoom, 6.5);
+      const targetPosition = getClusterPosition(selectedCluster);
       webRef.current.injectJavaScript(`
         (function() {
           const mapElement = document.getElementById('map');
           const map = mapElement && mapElement._leaflet_map;
           if (map) {
-            map.flyTo([${selectedCluster.lat}, ${selectedCluster.lon}], ${targetZoom}, {
+            map.flyTo([${targetPosition.lat}, ${targetPosition.lon}], ${targetZoom}, {
               duration: 1,
               easeLinearity: 0.2,
               animate: true,
@@ -931,7 +1116,9 @@ export default function WeatherScreen() {
     return `weather-map-${isFullscreen ? 'fullscreen' : 'default'}-${selectedCluster?.id ?? 'none'}-${Math.round(zoom * 10)}-${mapCenter.lat.toFixed(2)}-${mapCenter.lon.toFixed(2)}-${isPanMode ? 'pan' : 'focus'}`;
   }, [isFullscreen, selectedCluster?.id, zoom, isPanMode, mapCenter]);
 
-  const renderControls = () => (
+  const renderControls = () => {
+    const mapFocusHandle = !isPanMode ? mapFocus?.getNodeHandle?.() ?? undefined : undefined;
+    return (
     <View style={isFullscreen ? styles.fullscreenControls : styles.controls}>
       <TouchableOpacity
         {...mapEntryButton}
@@ -940,6 +1127,10 @@ export default function WeatherScreen() {
           mapEntryButton.isFocused ? styles.focusedButton : styles.inactiveButton,
         ]}
         activeOpacity={0.9}
+        nextFocusDown={panButton.getNodeHandle?.() ?? undefined}
+        nextFocusUp={mapFocusHandle}
+        nextFocusLeft={mapFocusHandle}
+        nextFocusRight={dpadRightButton.getNodeHandle?.() ?? undefined}
         onPress={() => {
           setFocusKey('');
           requestAnimationFrame(() => mapFocus?.focus?.());
@@ -956,12 +1147,22 @@ export default function WeatherScreen() {
           panButton.isFocused || isPanMode ? styles.focusedButton : styles.inactiveButton,
         ]}
         activeOpacity={0.9}
+        nextFocusUp={mapEntryButton.getNodeHandle?.() ?? undefined}
+        nextFocusDown={zoomInButton.getNodeHandle?.() ?? undefined}
+        nextFocusLeft={mapFocusHandle}
+        nextFocusRight={dpadUpButton.getNodeHandle?.() ?? undefined}
         onPress={() => {
           const nextPanMode = !isPanMode;
           setIsPanMode(nextPanMode);
           if (nextPanMode) {
-            setFocusKey('');
-            requestAnimationFrame(() => mapFocus?.focus?.());
+            setFocusKey(isTV ? 'dpad-up' : '');
+            requestAnimationFrame(() => {
+              if (isTV) {
+                dpadUpButton.focus?.();
+              } else {
+                mapFocus?.focus?.();
+              }
+            });
           }
         }}
       >
@@ -983,6 +1184,9 @@ export default function WeatherScreen() {
           zoomInButton.isFocused ? styles.focusedButton : styles.inactiveButton,
         ]}
         activeOpacity={0.9}
+        nextFocusUp={mapEntryButton.getNodeHandle?.() ?? undefined}
+        nextFocusDown={zoomOutButton.getNodeHandle?.() ?? undefined}
+        nextFocusLeft={mapFocusHandle}
         onPress={handleZoomIn}
       >
         <MaterialCommunityIcons name="magnify-plus" size={24} color="#9FD5FF" />
@@ -996,6 +1200,9 @@ export default function WeatherScreen() {
           zoomOutButton.isFocused ? styles.focusedButton : styles.inactiveButton,
         ]}
         activeOpacity={0.9}
+        nextFocusUp={zoomInButton.getNodeHandle?.() ?? undefined}
+        nextFocusDown={detailsButton.getNodeHandle?.() ?? undefined}
+        nextFocusLeft={mapFocusHandle}
         onPress={handleZoomOut}
       >
         <MaterialCommunityIcons name="magnify-minus" size={24} color="#9FD5FF" />
@@ -1009,6 +1216,9 @@ export default function WeatherScreen() {
           detailsButton.isFocused ? styles.focusedButton : styles.inactiveButton,
         ]}
         activeOpacity={0.9}
+        nextFocusUp={zoomOutButton.getNodeHandle?.() ?? undefined}
+        nextFocusDown={fullscreenButton.getNodeHandle?.() ?? undefined}
+        nextFocusLeft={mapFocusHandle}
         onPress={() => {
           const current = WEATHER_CLUSTERS[focusedIdx];
           if (current) {
@@ -1028,6 +1238,10 @@ export default function WeatherScreen() {
           fullscreenButton.isFocused ? styles.focusedButton : styles.inactiveButton,
         ]}
         activeOpacity={0.9}
+        nextFocusUp={detailsButton.getNodeHandle?.() ?? undefined}
+        nextFocusDown={isFullscreen ? undefined : mapFocusHandle}
+        nextFocusLeft={mapFocusHandle}
+        nextFocusRight={dpadDownButton.getNodeHandle?.() ?? undefined}
         onPress={() => {
           const enteringFullscreen = !isFullscreen;
           setIsFullscreen(enteringFullscreen);
@@ -1050,6 +1264,7 @@ export default function WeatherScreen() {
       </TouchableOpacity>
     </View>
   );
+  };
 
   const currentCluster = WEATHER_CLUSTERS[focusedIdx];
 
@@ -1074,11 +1289,18 @@ export default function WeatherScreen() {
             ref={mapFocusRef}
             style={styles.focusOverlay}
             activeOpacity={1}
-            hasTVPreferredFocus={focusKey === ''}
-            focusable
-            onFocus={() => setFocusKey('')}
+            pointerEvents={isPanMode ? 'none' : 'auto'}
+            hasTVPreferredFocus={!isPanMode && focusKey === ''}
+            focusable={!isPanMode}
+            onFocus={() => {
+              if (!isPanMode) {
+                setFocusKey('');
+              }
+            }}
           />
         )}
+
+        {renderDpad(styles.dpadFullscreenWrapper)}
 
         {renderControls()}
 
@@ -1121,11 +1343,18 @@ export default function WeatherScreen() {
             ref={mapFocusRef}
             style={styles.mapFocusTrap}
             activeOpacity={1}
-            hasTVPreferredFocus={focusKey === ''}
-            focusable
-            onFocus={() => setFocusKey('')}
+            pointerEvents={isPanMode ? 'none' : 'auto'}
+            hasTVPreferredFocus={!isPanMode && focusKey === ''}
+            focusable={!isPanMode}
+            onFocus={() => {
+              if (!isPanMode) {
+                setFocusKey('');
+              }
+            }}
           />
         )}
+
+        {renderDpad()}
 
         {focusKey === '' && currentCluster && (
           <View style={styles.focusBadge}>
@@ -1490,7 +1719,11 @@ function generateWeatherMapHTML(
       clusters.forEach((cluster, index) => {
         const isFocused = index === focusedIndex;
         const isSelected = selectedId && selectedId === cluster.id;
-        const size = 120 + Math.round(cluster.coverage * 0.25);
+        const size = 92 + Math.round(cluster.coverage * 0.18);
+        const hasMapLat = typeof cluster.mapLat === 'number';
+        const hasMapLon = typeof cluster.mapLon === 'number';
+        const lat = hasMapLat ? cluster.mapLat : cluster.lat;
+        const lon = hasMapLon ? cluster.mapLon : cluster.lon;
 
         const classNames = ['cloud-pin'];
         if (isFocused) classNames.push('focused');
@@ -1521,10 +1754,10 @@ function generateWeatherMapHTML(
           iconAnchor: [size / 2, size * 0.78],
         });
 
-        L.marker([cluster.lat, cluster.lon], { icon }).addTo(map);
+        L.marker([lat, lon], { icon }).addTo(map);
 
         if (isSelected) {
-          L.circle([cluster.lat, cluster.lon], {
+          L.circle([lat, lon], {
             radius: 140000,
             color: cluster.color,
             weight: 2,
@@ -1538,7 +1771,9 @@ function generateWeatherMapHTML(
       if (selectedId) {
         const target = clusters.find(cluster => cluster.id === selectedId);
         if (target) {
-          map.setView([target.lat, target.lon], Math.max(initialZoom, 6));
+          const targetLat = typeof target.mapLat === 'number' ? target.mapLat : target.lat;
+          const targetLon = typeof target.mapLon === 'number' ? target.mapLon : target.lon;
+          map.setView([targetLat, targetLon], Math.max(initialZoom, 6));
         }
       }
     </script>

@@ -114,7 +114,7 @@ const styles = StyleSheet.create({
   buttonText: {
     color: '#fff',
     marginLeft: 10,
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
     textShadowColor: 'rgba(0, 0, 0, 0.5)',
     textShadowOffset: { width: 1, height: 1 },
@@ -278,8 +278,6 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   controlButton: {
-    width: 56,
-    height: 56,
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 12,
